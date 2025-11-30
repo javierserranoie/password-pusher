@@ -1,0 +1,57 @@
+version: "3.8"
+
+x-op-app-environment: &x-op-app-environment
+  environment:
+    PWP__ENABLE_LOGINS: true
+    PWP__ENABLE_FILE_PUSHES: true
+    PWP__FILES__STORAGE: local
+    PWP__ENABLE_QR_PUSHES: true
+    PWP__ENABLE_URL_PUSHES: true
+    FORCE_SSL: true
+    PWPUSH_MASTER_KEY: ${PWPUSH_MASTER_KEY}
+    TLS_DOMAIN: pusher.jslabs.es
+ 
+services:
+  pwpush:
+    image: docker.io/pglombardo/pwpush:stable
+    container_name: pwpusher
+    restart: unless-stopped
+
+    volumes:
+      - ./storage:/opt/PasswordPusher/storage:rw
+
+    # minimal resource limits (tune to your VPS)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+    user: "1000:1000"
+      #read_only: true
+      #tmpfs:
+      #  - /tmp:rw,nosuid,nodev,mode=1777
+      #  - /run:rw,nosuid,nodev,mode=0755
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    privileged: false
+
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pwpush.rule=Host(`pusher.jslabs.es`)"
+      - "traefik.http.routers.pwpush.entrypoints=websecure"
+      - "traefik.http.routers.pwpush.tls=true"
+      - "traefik.http.routers.pwpush.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.pwpush.middlewares=redirect-pusher@file"
+      - "traefik.http.services.pwpush.loadbalancer.server.port=5100"
+
+    <<: *x-op-app-environment
+
+networks:
+  traefik-network:
+    external: true
+
