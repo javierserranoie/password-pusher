@@ -1,16 +1,16 @@
 x-op-app-environment: &x-op-app-environment
   environment:
-    PWP__ENABLE_LOGINS: true
-    PWP__ENABLE_FILE_PUSHES: true
+    PWP__ENABLE_LOGINS: "true"
+    PWP__ENABLE_FILE_PUSHES: "true"
     PWP__FILES__STORAGE: local
-    PWP__ENABLE_QR_PUSHES: true
-    PWP__ENABLE_URL_PUSHES: true
-    FORCE_SSL: true
+    PWP__ENABLE_QR_PUSHES: "true"
+    PWP__ENABLE_URL_PUSHES: "true"
+    FORCE_SSL: "true"
     PWPUSH_MASTER_KEY: ${PWPUSH_MASTER_KEY}
     TLS_DOMAIN: pusher.jslabs.es
  
 services:
-  pwpush:
+  pusher:
     image: docker.io/pglombardo/pwpush:stable
 
     volumes:
@@ -20,28 +20,29 @@ services:
     deploy:
       replicas: 1
       restart_policy:
-        condition: unless-stopped
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
       resources:
         limits:
           cpus: '0.50'
           memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
       update_config:
         parallelism: 1
         delay: 10s
         failure_action: rollback
+        monitor: 60s
+        order: start-first
       rollback_config:
         parallelism: 1
         delay: 0s
 
     user: "1000:1000"
-      #read_only: true
-      #tmpfs:
-      #  - /tmp:rw,nosuid,nodev,mode=1777
-      #  - /run:rw,nosuid,nodev,mode=0755
     cap_drop:
       - ALL
-    security_opt:
-      - no-new-privileges:true
     privileged: false
 
     networks:
