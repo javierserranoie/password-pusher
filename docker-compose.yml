@@ -1,5 +1,3 @@
-version: "3.8"
-
 x-op-app-environment: &x-op-app-environment
   environment:
     PWP__ENABLE_LOGINS: true
@@ -14,18 +12,26 @@ x-op-app-environment: &x-op-app-environment
 services:
   pwpush:
     image: docker.io/pglombardo/pwpush:stable
-    container_name: pwpusher
-    restart: unless-stopped
 
     volumes:
       - ./storage:/opt/PasswordPusher/storage:rw
 
     # minimal resource limits (tune to your VPS)
     deploy:
+      replicas: 1
+      restart_policy:
+        condition: unless-stopped
       resources:
         limits:
           cpus: '0.50'
           memory: 512M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 0s
 
     user: "1000:1000"
       #read_only: true
