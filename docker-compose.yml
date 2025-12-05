@@ -5,6 +5,8 @@ x-op-app-environment: &x-op-app-environment
     PWP__FILES__STORAGE: local
     PWP__ENABLE_QR_PUSHES: "true"
     PWP__ENABLE_URL_PUSHES: "true"
+    PWP__THEME: darkly
+    PWP_PRECOMPILE: "true"
     FORCE_SSL: "true"
     TLS_DOMAIN: pusher.jslabs.es
     PWPUSH_STORAGE_PATH: /opt/PasswordPusher/storage
@@ -44,7 +46,7 @@ services:
       resources:
         limits:
           cpus: '0.50'
-          memory: 512M
+          memory: 1G
         reservations:
           cpus: '0.25'
           memory: 256M
