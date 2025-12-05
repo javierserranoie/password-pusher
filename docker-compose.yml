@@ -6,17 +6,35 @@ x-op-app-environment: &x-op-app-environment
     PWP__ENABLE_QR_PUSHES: "true"
     PWP__ENABLE_URL_PUSHES: "true"
     FORCE_SSL: "true"
-    PWPUSH_MASTER_KEY: ${PWPUSH_MASTER_KEY}
     TLS_DOMAIN: pusher.jslabs.es
- 
+    PWPUSH_STORAGE_PATH: /opt/PasswordPusher/storage
+
 services:
   pusher:
     image: docker.io/pglombardo/pwpush:stable
-
+    entrypoint: ["/entrypoint-wrapper.sh"]
+    configs:
+      - source: entrypoint_wrapper
+        target: /entrypoint-wrapper.sh
+        mode: 0555
+    secrets:
+      - pusher_secrets
     volumes:
-      - ./storage:/opt/PasswordPusher/storage:rw
-
-    # minimal resource limits (tune to your VPS)
+      - ${PUSHER_STORAGE_DIR:-/home/js/workspace/pusher/storage}:/opt/PasswordPusher/storage:rw
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pwpush.rule=Host(`pusher.jslabs.es`)"
+      - "traefik.http.routers.pwpush.entrypoints=websecure"
+      - "traefik.http.routers.pwpush.tls=true"
+      - "traefik.http.routers.pwpush.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.pwpush.middlewares=redirect-pusher@file"
+      - "traefik.http.services.pwpush.loadbalancer.server.port=5100"
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    privileged: false
     deploy:
       replicas: 1
       restart_policy:
@@ -40,23 +58,15 @@ services:
         parallelism: 1
         delay: 0s
 
-    user: "1000:1000"
-    cap_drop:
-      - ALL
-    privileged: false
-
-    networks:
-      - traefik-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.pwpush.rule=Host(`pusher.jslabs.es`)"
-      - "traefik.http.routers.pwpush.entrypoints=websecure"
-      - "traefik.http.routers.pwpush.tls=true"
-      - "traefik.http.routers.pwpush.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.pwpush.middlewares=redirect-pusher@file"
-      - "traefik.http.services.pwpush.loadbalancer.server.port=5100"
-
     <<: *x-op-app-environment
+
+configs:
+  entrypoint_wrapper:
+    file: ./entrypoint-wrapper.sh
+
+secrets:
+  pusher_secrets:
+    file: ./.env
 
 networks:
   traefik-network:
