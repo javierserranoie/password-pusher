@@ -31,7 +31,7 @@ services:
       - "traefik.http.routers.pwpush.entrypoints=websecure"
       - "traefik.http.routers.pwpush.tls=true"
       - "traefik.http.routers.pwpush.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.pwpush.middlewares=redirect-pusher@file"
+      - "traefik.http.routers.pwpush.middlewares=redirect-eu@file"
       - "traefik.http.services.pwpush.loadbalancer.server.port=5100"
     user: "1000:1000"
     cap_drop:
@@ -47,9 +47,6 @@ services:
         limits:
           cpus: '0.50'
           memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
       update_config:
         parallelism: 1
         delay: 10s
